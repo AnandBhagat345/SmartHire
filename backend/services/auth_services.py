@@ -7,22 +7,24 @@ import os
 load_dotenv()
 
 # Password hashing setup
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
-# .env se secret lo
+# taking secret from .env 
 JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 24
 
-# ─── Password Functions ───────────────────────────────
+# ─── Password Functions ────
 
 def hash_password(password: str) -> str:
+    password = password[:72]
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    plain_password = plain_password[:72]
     return pwd_context.verify(plain_password, hashed_password)
 
-# ─── JWT Functions ────────────────────────────────────
+# ─── JWT Functions ────
 
 def create_token(data: dict) -> str:
     payload = data.copy()
