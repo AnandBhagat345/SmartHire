@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.database import users_collection
-from routes.auth import router
+from app.routes.auth import router
+
 
 # .env file load karo
 load_dotenv()

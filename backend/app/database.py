@@ -14,7 +14,7 @@ client = AsyncIOMotorClient(MONGODB_URL)
 # Database select karo
 db = client.smarthire
 
-# Collections (SQL mein tables jaise hoti hain)
+# Collections 
 users_collection = db["users"]
 resumes_collection = db["resumes"]
 jobs_collection = db["jobs"]
