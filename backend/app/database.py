@@ -11,10 +11,11 @@ MONGODB_URL = os.getenv("MONGODB_URL")
 # MongoDB client banao
 client = AsyncIOMotorClient(MONGODB_URL)
 
-# Database select karo
+# Database selection
 db = client.smarthire
 
 # Collections 
 users_collection = db["users"]
 resumes_collection = db["resumes"]
 jobs_collection = db["jobs"]
+
