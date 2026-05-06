@@ -10,7 +10,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def analyze_resume(resume_text: str, job_description: str):
     # Take Gemini model 
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     
     prompt = f"""
                 You are an expert ATS (Applicant Tracking System) and professional HR recruiter.

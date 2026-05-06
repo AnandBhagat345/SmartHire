@@ -3,6 +3,7 @@ from app.middleware.auth_middleware import get_current_user
 from app.services.pdf_services import extract_text_from_pdf
 from app.services.ai_services import analyze_resume
 from app.schemas.resume import AnalysisResponse
+from fastapi import HTTPException
 
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
@@ -12,8 +13,16 @@ async def analyze(
     job_description: str = Form(...),
     current_user = Depends(get_current_user)
 ):
+    
     # Step 1: PDF se text nikalo
-    resume_text = extract_text_from_pdf(file.file)
+    resume_text = extract_text_from_pdf(file)
+    
+    if not resume_text:
+        if not resume_text:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF empty or unreadable"
+            )
     
     
     # Step 2: AI ko bhejo
@@ -21,3 +30,5 @@ async def analyze(
     
     # Step 3: Result return karo
     return result
+
+    

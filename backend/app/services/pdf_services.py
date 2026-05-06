@@ -5,7 +5,7 @@ import pdfplumber
 def extract_text_from_pdf(file : str) -> str:
     text =""
     
-    with pdfplumber.open(file) as pdf:
+    with pdfplumber.open(file.file) as pdf:
         for page in pdf.pages:
             
             extracted =page.extract_text()
