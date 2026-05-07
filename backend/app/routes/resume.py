@@ -47,3 +47,18 @@ async def analyze(
     await resumes_collection.insert_one(document)
     
     return result
+
+@router.get("/history")
+async def get_history(
+    current_user = Depends(get_current_user)
+    ):
+    cursor = resumes_collection.find({"user_id":current_user["user_id"]})
+
+    analyses = await cursor.to_list(length=100)
+    
+    for analysis in analyses:
+        analysis["_id"] = str(analysis["_id"])
+    
+    return analyses
+        
+  
