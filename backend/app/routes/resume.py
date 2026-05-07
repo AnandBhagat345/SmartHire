@@ -5,6 +5,9 @@ from app.services.ai_services import analyze_resume
 from app.schemas.resume import AnalysisResponse
 from fastapi import HTTPException
 
+from app.database import resumes_collection
+from app.models.resume import resume_model
+
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -14,21 +17,33 @@ async def analyze(
     current_user = Depends(get_current_user)
 ):
     
-    # Step 1: PDF se text nikalo
+    #  extract text from pdf
     resume_text = extract_text_from_pdf(file)
     
     if not resume_text:
-        if not resume_text:
             raise HTTPException(
                 status_code=400,
                 detail="PDF empty or unreadable"
             )
     
     
-    # Step 2: AI ko bhejo
+    #  Sent to AI
     result = analyze_resume(resume_text, job_description)
-    
-    # Step 3: Result return karo
-    return result
 
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
     
+
+    document = resume_model(
+        user_id=current_user["user_id"],
+        job_description=job_description,
+        ats_score=result["ats_score"],
+        missing_keywords=result["missing_keywords"],
+        ats_feedback=result["ats_feedback"],
+        recruiter_feedback=result["recruiter_feedback"],
+        suggestions=result["suggestions"]
+    )
+
+    await resumes_collection.insert_one(document)
+    
+    return result
