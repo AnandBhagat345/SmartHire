@@ -12,14 +12,14 @@ class AnalysisResponse(BaseModel):
     recruiter_feedback: str
     suggestions: List[str]
 
-    # ─── SCORE VALIDATOR ───
+    # SCORE VALIDATOR 
     @field_validator("ats_score")
     def score_range(cls, v):
         if not 0 <= v <= 100:
             raise ValueError("Score must be between 0 and 100")
         return v
 
-    # ─── SUGGESTIONS ───
+    #  SUGGESTIONS 
     @field_validator("suggestions")
     def min_suggestions(cls, v):
         if len(v) < 3:
@@ -30,33 +30,33 @@ class AnalysisResponse(BaseModel):
     def no_blank_suggestions(cls, v):
         return [i.strip() for i in v if i.strip()]
 
-    # ─── QUALITY ISSUES ───
+    # QUALITY ISSUES 
     @field_validator("quality_issues")
     def min_quality_issues(cls, v):
         if len(v) < 1:
             raise ValueError("At least 1 quality issue required")
         return v
 
-    # ─── MISSING KEYWORDS ───
+    #  MISSING KEYWORDS 
     @field_validator("missing_keywords", mode="before")
     def no_blank_keywords(cls, v):
         return [i.strip() for i in v if i.strip()]
 
-    # ─── LEVEL MISMATCH ───
+    # LEVEL MISMATCH 
     @field_validator("level_mismatch")
     def normalize_level_mismatch(cls, v):
         if not v or v.strip() == "":
             return "none"
         return v
 
-    # ─── FEEDBACK LENGTH ───
+    # FEEDBACK LENGTH 
     @field_validator("ats_feedback", "recruiter_feedback")
     def min_feedback_length(cls, v):
         if len(v.split()) < 10:
             raise ValueError("Feedback too short")
         return v
 
-    # ─── CROSS FIELD VALIDATION ───
+    # CROSS FIELD VALIDATION 
     @model_validator(mode="after")
     def fresher_score_cap(self):
         if self.candidate_level == "FRESHER" and self.ats_score > 75:
