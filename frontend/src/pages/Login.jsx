@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -115,12 +116,12 @@ setError(err.response?.data?.detail || "Something went wrong!")
       {/* Footer */}
       <p className="text-center text-sm text-slate-500 mt-6">
         Don&apos;t have an account?{" "}
-        <a
-          href="/register"
+        <Link
+          to="/register"
           className="text-blue-600 hover:text-blue-700 font-medium"
         >
           Register
-        </a>
+        </Link>
       </p>
 
     </div>
