@@ -30,11 +30,14 @@ export default function JobTracker() {
 
   // Jobs fetccing
   const fetchJobs = async () => {
+    setLoading(true)
     try{ 
       const data = await getJobs(token)
       setJobs(data)
    } catch(err){
     console.error(err)
+   } finally {
+    setLoading(false)
    }
   }
 
@@ -42,7 +45,7 @@ export default function JobTracker() {
   const handleCreate = async (e) => {
     e.preventDefault()
     if (!form.company_name || !form.job_role){
-      setError('Company name aur job role zaroori hai!')
+      setError('Company name and job role are required!')
         return
     }
     try{
@@ -57,7 +60,7 @@ export default function JobTracker() {
     }
   }
 
-  // Status update karo
+  // update status
   const handleUpdate = async (jobId, newStatus) => {
     try {
         await updateJob(jobId, { status: newStatus }, token)
@@ -67,7 +70,7 @@ export default function JobTracker() {
     }
   }
 
-  // Job delete karo
+  // Job delete
   const handleDelete = async (jobId) => {
     try {
         await deleteJob(jobId, token)
@@ -202,14 +205,19 @@ export default function JobTracker() {
 
   <button
     type="submit"
-    className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
+    className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition cursor-pointer"
   >
     ➕ Add Job
   </button>
 
 </form>
       </div>
-
+      
+      {loading && (
+        <p className="text-sm text-slate-400 text-center py-4">
+          Loading... ⏳
+        </p>
+      )}
       {/* Jobs List */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         <h3 className="text-lg font-semibold text-slate-700 mb-4">
@@ -233,7 +241,7 @@ export default function JobTracker() {
                     <p className="text-xs text-slate-400 mt-1">📝 {job.notes}</p>
                   )}
                   {job.follow_up_date && (
-                    <p className="text-xs text-slate-400">🗓️ Follow up: {job.follow_up_date}</p>
+                    <p className="text-xs text-slate-400">🗓️ Follow up: {new Date(job.follow_up_date).toLocaleDateString()}</p>
                   )}
                 </div>
 
@@ -258,7 +266,7 @@ export default function JobTracker() {
                   {/* Delete Button */}
                   <button
                     onClick={() => handleDelete(job._id)}
-                    className="text-red-500 hover:text-red-700 text-sm font-medium transition"
+                    className="text-red-500 hover:text-red-700 text-sm font-medium transition cursor-pointer"
                   >
                     🗑️ Delete
                   </button>
