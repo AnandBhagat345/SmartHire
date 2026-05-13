@@ -43,7 +43,7 @@ export default function Dashboard() {
 
   const handleAnalyze = async (e) => {
     e.preventDefault()
-    if (!file) return setError('PDF upload karo!')
+    if (!file) return setError('Upload the PDF!')
     
     setLoading(true)
     setError('')
