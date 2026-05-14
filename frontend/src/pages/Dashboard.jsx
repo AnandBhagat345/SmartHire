@@ -5,6 +5,10 @@ import { analyzeResume, getHistory } from '../api/resume'
 import { getJobs } from '../api/jobs'
 import Navbar from '../components/Navbar'
 
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import ScoreCard from '../components/ScoreCard'
+import SkillTags from '../components/SkillTags'
+
 export default function Dashboard() {
   const [file, setFile] = useState(null)
   const [jobDescription, setJobDescription] = useState('')
@@ -153,89 +157,101 @@ export default function Dashboard() {
         </form>
       </div>
 
-      {/* Result Section */}
       {result && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 space-y-4">
-          
-          <h3 className="text-lg font-semibold text-slate-700">
-            📊 Analysis Result
-          </h3>
+  <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 space-y-6">
+    
+    <h3 className="text-lg font-semibold text-slate-700">
+      📊 Analysis Result
+    </h3>
 
-          {/* ATS Score */}
-          <div className="text-center">
-            <p className="text-sm text-slate-500">ATS Score</p>
-            <p className="text-5xl font-extrabold text-blue-600 mt-1">
-              {result.ats_score}%
+    {/* Score Card */}
+    <ScoreCard score={result.ats_score} />
+
+    {/* Missing Keywords */}
+    <SkillTags keywords={result.missing_keywords} />
+
+    {/* ATS Feedback */}
+    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+      <p className="text-sm font-semibold text-slate-700 mb-2">
+        🤖 ATS Feedback
+      </p>
+      <p className="text-sm text-slate-600">{result.ats_feedback}</p>
+    </div>
+
+    {/* Recruiter Feedback */}
+    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+      <p className="text-sm font-semibold text-slate-700 mb-2">
+        👔 Recruiter Feedback
+      </p>
+      <p className="text-sm text-slate-600">{result.recruiter_feedback}</p>
+    </div>
+
+    {/* Suggestions */}
+    <div>
+      <p className="text-sm font-semibold text-slate-700 mb-3">
+        💡 Suggestions
+      </p>
+      <ul className="space-y-2">
+        {result.suggestions.map((s, i) => (
+          <li key={i} className="flex gap-2 text-sm text-slate-600 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+            <span>✅</span> {s}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+  </div>
+)}
+
+      {history.length > 0 && (
+  <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+    
+    <h3 className="text-lg font-semibold text-slate-700 mb-6">
+      📈 ATS Score History
+    </h3>
+
+    {/* Bar Chart */}
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={history.map((item, i) => ({
+        name: `V${i + 1}`,
+        score: item.ats_score
+      }))}>
+        <XAxis dataKey="name" />
+        <YAxis domain={[0, 100]} />
+        <Tooltip />
+        <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+          {history.map((item, i) => (
+            <Cell
+              key={i}
+              fill={
+                item.ats_score >= 71 ? '#22c55e' :
+                item.ats_score >= 41 ? '#eab308' : '#ef4444'
+              }
+            />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+
+    {/* History List */}
+    <div className="space-y-3 mt-4">
+      {history.map((item, i) => (
+        <div key={i} className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2">
+          <div>
+            <p className="text-xs font-medium text-slate-700">
+              {item.job_description?.slice(0, 50)}...
+            </p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {new Date(item.created_at).toLocaleDateString()}
             </p>
           </div>
-
-          {/* Missing Keywords */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Missing Keywords:</p>
-            <div className="flex flex-wrap gap-2">
-              {result.missing_keywords.map((kw, i) => (
-                <span key={i} className="bg-red-100 text-red-600 text-xs px-3 py-1 rounded-full">
-                  {kw}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* ATS Feedback */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-1">ATS Feedback:</p>
-            <p className="text-sm text-slate-600">{result.ats_feedback}</p>
-          </div>
-
-          {/* Recruiter Feedback */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-1">Recruiter Feedback:</p>
-            <p className="text-sm text-slate-600">{result.recruiter_feedback}</p>
-          </div>
-
-          {/* Suggestions */}
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Suggestions:</p>
-            <ul className="space-y-1">
-              {result.suggestions.map((s, i) => (
-                <li key={i} className="text-sm text-slate-600 flex gap-2">
-                  <span>✅</span> {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-
+          <ScoreCard score={item.ats_score} small />
         </div>
-      )}
+      ))}
+    </div>
 
-      {/* History Section */}
-      {history.length > 0 && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          
-          <h3 className="text-lg font-semibold text-slate-700 mb-4">
-            📋 Recent Analyses
-          </h3>
-
-          <div className="space-y-3">
-            {history.map((item, i) => (
-              <div key={i} className="flex items-center justify-between border border-slate-100 rounded-lg px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {item.job_description?.slice(0, 50)}...
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <span className="text-2xl font-bold text-blue-600">
-                  {item.ats_score}%
-                </span>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      )}
+  </div>
+)}
 
     </div>
   </div>
