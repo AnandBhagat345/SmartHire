@@ -49,7 +49,10 @@ async def analyze(
 
     await resumes_collection.insert_one(document)
     
-    return result
+    return {
+    **result,
+    "resume_text": resume_text
+    }
 
 @router.get("/history")
 async def get_history(

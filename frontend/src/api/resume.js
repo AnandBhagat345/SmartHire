@@ -29,3 +29,12 @@ export const getHistory = async (token) => {
 
     return response.data
 }
+
+export const rewriteResume = async (resume_text, job_description, token) => {
+    const response = await axios.post(
+        `${API}/resume/rewrite`,
+        { resume_text, job_description },
+        { headers: { Authorization: `Bearer ${token}` } }
+    )
+    return response.data
+}

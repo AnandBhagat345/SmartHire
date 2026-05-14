@@ -11,6 +11,7 @@ class AnalysisResponse(BaseModel):
     ats_feedback: str
     recruiter_feedback: str
     suggestions: List[str]
+    resume_text: str
 
     # SCORE VALIDATOR 
     @field_validator("ats_score")

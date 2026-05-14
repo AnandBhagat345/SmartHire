@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import ScoreCard from '../components/ScoreCard'
 import SkillTags from '../components/SkillTags'
+import { rewriteResume } from '../api/resume'
 
 export default function Dashboard() {
   const [file, setFile] = useState(null)
@@ -20,6 +21,10 @@ export default function Dashboard() {
 
   const { token, logout } = useAuth()
   const navigate = useNavigate()
+
+  const [rewriting, setRewriting] = useState(false)
+  const [rewrittenText, setRewrittenText] = useState(null)
+  const [resumeText, setResumeText] = useState('')
 
   // Page load pe data fetch karo
   useEffect(() => {
@@ -67,6 +72,23 @@ export default function Dashboard() {
     logout()
     navigate('/')
   }
+
+  const handleRewrite = async () => {
+    if (!result) return
+    setRewriting(true)
+    try {
+        const data = await rewriteResume(
+            result.resume_text,  
+            jobDescription,
+            token
+        )
+        setRewrittenText(data.rewritten_text)
+    } catch (err) {
+        setError(err.response?.data?.detail || 'Something went wrong!')
+    } finally {
+        setRewriting(false)
+    }
+}
 
   return (
   <div className="min-h-screen bg-slate-100">
@@ -199,6 +221,51 @@ export default function Dashboard() {
         ))}
       </ul>
     </div>
+
+    {/* Rewrite Button */}
+    <button
+      onClick={handleRewrite}
+      disabled={rewriting}
+      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
+    >
+      {rewriting ? 'Polishing Resume... ✨⏳' : '✨ Polish My Resume'}
+    </button>
+
+    {/* Side by Side */}
+    {rewrittenText && (
+      <div className="grid grid-cols-2 gap-4">
+
+        {/* Original */}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm font-semibold text-red-600 mb-3">
+            📄 Original Resume
+          </p>
+          <pre className="text-xs text-slate-600 whitespace-pre-wrap font-sans">
+            {result.resume_text}
+          </pre>
+        </div>
+
+        {/* Improved */}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-green-600">
+              ✨ Polished Resume
+            </p>
+            {/* Copy Button */}
+            <button
+              onClick={() => navigator.clipboard.writeText(rewrittenText)}
+              className="text-xs bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition"
+            >
+              📋 Copy
+            </button>
+          </div>
+          <pre className="text-xs text-slate-600 whitespace-pre-wrap font-sans">
+            {rewrittenText}
+          </pre>
+        </div>
+
+      </div>
+    )}
 
   </div>
 )}
