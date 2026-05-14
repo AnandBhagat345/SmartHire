@@ -62,3 +62,12 @@ class AnalysisResponse(BaseModel):
         if self.candidate_level == "FRESHER" and self.ats_score > 75:
             self.ats_score = 75
         return self
+    
+    # Rewrite for input
+class RewriteRequest(BaseModel):
+    resume_text: str
+    job_description: str
+
+# Rewrite for output
+class RewriteResponse(BaseModel):
+    rewritten_text: str

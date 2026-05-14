@@ -8,6 +8,9 @@ from fastapi import HTTPException
 from app.database import resumes_collection
 from app.models.resume import resume_model
 
+from app.schemas.resume import AnalysisResponse, RewriteRequest, RewriteResponse
+from app.services.ai_services import analyze_resume, rewrite_resume
+
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -60,5 +63,30 @@ async def get_history(
         analysis["_id"] = str(analysis["_id"])
     
     return analyses
+
+@router.post("/rewrite", response_model=RewriteResponse)
+async def rewrite(
+    data: RewriteRequest,
+    current_user = Depends(get_current_user)
+):
+    # user input 
+    resume_text = data.resume_text
+    job_description = data.job_description
+
+    # AI rewrite service call 
+    rewritten_resume = rewrite_resume(
+        resume_text,
+        job_description
+    )
+
+     # Error check
+    if rewritten_resume.startswith("Error:"):
+        raise HTTPException(
+            status_code=500,
+            detail=rewritten_resume
+        )
+
+    # response return
+    return {"rewritten_text": rewritten_resume}
         
   
