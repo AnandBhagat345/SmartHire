@@ -52,7 +52,7 @@ async def analyze(
 async def get_history(
     current_user = Depends(get_current_user)
     ):
-    cursor = resumes_collection.find({"user_id":current_user["user_id"]})
+    cursor = resumes_collection.find({"user_id":current_user["user_id"]}).sort("created_at", -1)
 
     analyses = await cursor.to_list(length=100)
     
