@@ -38,3 +38,13 @@ export const rewriteResume = async (resume_text, job_description, token) => {
     )
     return response.data
 }
+
+
+export const generateInterviewQuestions = async (resume_text, job_description, token) => {
+    const response = await axios.post(
+        `${API}/resume/interview-prep`,
+        { resume_text, job_description },
+        { headers: { Authorization: `Bearer ${token}` } }
+    )
+    return response.data
+}

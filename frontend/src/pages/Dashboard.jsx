@@ -8,7 +8,7 @@ import Navbar from '../components/Navbar'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import ScoreCard from '../components/ScoreCard'
 import SkillTags from '../components/SkillTags'
-import { rewriteResume } from '../api/resume'
+import { rewriteResume,  generateInterviewQuestions } from '../api/resume'
 
 export default function Dashboard() {
   const [file, setFile] = useState(null)
@@ -25,6 +25,9 @@ export default function Dashboard() {
   const [rewriting, setRewriting] = useState(false)
   const [rewrittenText, setRewrittenText] = useState(null)
   const [resumeText, setResumeText] = useState('')
+
+  const [questions, setQuestions] = useState(null)
+const [loadingQuestions, setLoadingQuestions] = useState(false)
 
   // Page load pe data fetch karo
   useEffect(() => {
@@ -87,6 +90,25 @@ export default function Dashboard() {
         setError(err.response?.data?.detail || 'Something went wrong!')
     } finally {
         setRewriting(false)
+    }
+}
+
+
+
+const handleInterviewPrep = async () => {
+    if (!result) return
+    setLoadingQuestions(true)
+    try {
+        const data = await generateInterviewQuestions(
+            result.resume_text,
+            jobDescription,
+            token
+        )
+        setQuestions(data)
+    } catch (err) {
+        setError(err.response?.data?.detail || 'Something went wrong!')
+    } finally {
+        setLoadingQuestions(false)
     }
 }
 
@@ -230,6 +252,85 @@ export default function Dashboard() {
     >
       {rewriting ? 'Polishing Resume... ✨⏳' : '✨ Polish My Resume'}
     </button>
+
+    <button
+        onClick={handleInterviewPrep}
+        disabled={loadingQuestions}
+        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
+    >
+        {loadingQuestions ? 'Generating Questions... 🎤⏳' : '🎤 Generate Interview Questions'}
+    </button>
+
+    {/* Interview Questions */}
+{questions && (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 space-y-6">
+        
+        <h3 className="text-lg font-semibold text-slate-700">
+            🎯 Interview Preparation
+        </h3>
+
+        {/* Technical */}
+        <div>
+            <h4 className="text-sm font-bold text-blue-600 mb-3 flex items-center gap-2">
+                💻 Technical Questions ({questions.technical.length})
+            </h4>
+            <ul className="space-y-2">
+                {questions.technical.map((q, i) => (
+                    <li key={i} className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm text-slate-700">
+                        <span className="font-bold text-blue-500">Q{i+1}.</span> {q}
+                    </li>
+                ))}
+            </ul>
+        </div>
+
+        {/* HR */}
+        <div>
+            <h4 className="text-sm font-bold text-green-600 mb-3 flex items-center gap-2">
+                👔 HR Questions ({questions.hr.length})
+            </h4>
+            <ul className="space-y-2">
+                {questions.hr.map((q, i) => (
+                    <li key={i} className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 text-sm text-slate-700">
+                        <span className="font-bold text-green-500">Q{i+1}.</span> {q}
+                    </li>
+                ))}
+            </ul>
+        </div>
+
+        {/* Resume Based */}
+        <div>
+            <h4 className="text-sm font-bold text-purple-600 mb-3 flex items-center gap-2">
+                📄 Resume-Based Questions ({questions.resume_based.length})
+            </h4>
+            <ul className="space-y-2">
+                {questions.resume_based.map((q, i) => (
+                    <li key={i} className="bg-purple-50 border border-purple-100 rounded-lg px-4 py-3 text-sm text-slate-700">
+                        <span className="font-bold text-purple-500">Q{i+1}.</span> {q}
+                    </li>
+                ))}
+            </ul>
+        </div>
+
+        {/* Copy All Button */}
+        <button
+            onClick={() => {
+                const all = [
+                    '💻 TECHNICAL QUESTIONS',
+                    ...questions.technical.map((q,i) => `Q${i+1}. ${q}`),
+                    '\n👔 HR QUESTIONS',
+                    ...questions.hr.map((q,i) => `Q${i+1}. ${q}`),
+                    '\n📄 RESUME-BASED QUESTIONS',
+                    ...questions.resume_based.map((q,i) => `Q${i+1}. ${q}`)
+                ].join('\n')
+                navigator.clipboard.writeText(all)
+            }}
+            className="w-full bg-slate-700 hover:bg-slate-800 text-white py-2 rounded-lg text-sm transition"
+        >
+            📋 Copy All Questions
+        </button>
+
+    </div>
+)}
 
     {/* Side by Side */}
     {rewrittenText && (
