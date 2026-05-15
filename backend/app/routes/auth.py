@@ -6,10 +6,18 @@ from app.services.auth_services import hash_password, verify_password, create_to
 from app.models.user import user_model
 from app.database import users_collection
 
+from fastapi import APIRouter, HTTPException, status, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+
+limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(data: RegisterRequest):
+@limiter.limit("5/minute")
+async def register(request:Request, data: RegisterRequest):
     existing_user = await users_collection.find_one({"email": data.email})
     if existing_user:
         raise HTTPException(
@@ -21,10 +29,11 @@ async def register(data: RegisterRequest):
     await users_collection.insert_one(user)
     return {"message": "Account created successfully! ✅"}
 
-# ─── Login ────────────────────────────────────────────
+# ---- Login ---
 @router.post("/login", response_model=TokenResponse)
-async def login(data: OAuth2PasswordRequestForm = Depends()):
-    # OAuth2PasswordRequestForm mein username field hota hai email ke liye
+@limiter.limit("10/minute")
+async def login(request: Request, data: OAuth2PasswordRequestForm = Depends()):
+    # IN  OAuth2PasswordRequestForm the username field is email 
     user = await users_collection.find_one({"email": data.username})
     if not user:
         raise HTTPException(

@@ -3,7 +3,7 @@ from app.middleware.auth_middleware import get_current_user
 from app.services.pdf_services import extract_text_from_pdf
 from app.services.ai_services import analyze_resume
 from app.schemas.resume import AnalysisResponse
-from fastapi import HTTPException
+
 
 from app.database import resumes_collection
 from app.models.resume import resume_model
@@ -11,10 +11,18 @@ from app.models.resume import resume_model
 from app.schemas.resume import AnalysisResponse, RewriteRequest, RewriteResponse,  InterviewRequest, InterviewResponse
 from app.services.ai_services import analyze_resume, rewrite_resume, generate_interview_questions
 
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
 @router.post("/analyze", response_model=AnalysisResponse)
+@limiter.limit("5/minute")
 async def analyze(
+    request: Request,
     file: UploadFile = File(...),
     job_description: str = Form(...),
     current_user = Depends(get_current_user)
@@ -68,7 +76,9 @@ async def get_history(
     return analyses
 
 @router.post("/rewrite", response_model=RewriteResponse)
+@limiter.limit("5/minute")
 async def rewrite(
+    request: Request,
     data: RewriteRequest,
     current_user = Depends(get_current_user)
 ):
@@ -94,7 +104,9 @@ async def rewrite(
 
 
 @router.post("/interview-prep", response_model=InterviewResponse)
+@limiter.limit("5/minute")
 async def interview_prep(
+    request: Request,
     data: InterviewRequest,
     current_user = Depends(get_current_user)
 ):
