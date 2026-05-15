@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone, UTC
 
 # MongoDB mein user document ka structure
 def user_model(name: str, email: str, hashed_password: str):
@@ -6,5 +6,7 @@ def user_model(name: str, email: str, hashed_password: str):
         "name": name,
         "email": email,
         "hashed_password": hashed_password,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(UTC)
     }
+    
+

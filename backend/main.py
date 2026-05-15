@@ -19,6 +19,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.state.testing = False
+
 
 # Rate limit error handler
 app.state.limiter = limiter

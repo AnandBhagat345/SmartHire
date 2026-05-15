@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,UTC
 from typing import Optional
 
 def job_model(
@@ -20,5 +20,5 @@ def job_model(
         "application_date": application_date,
         "notes": notes,
         "follow_up_date": follow_up_date,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(UTC)
     }

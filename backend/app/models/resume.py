@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,UTC
 
 def resume_model(
     user_id: str,
@@ -17,5 +17,5 @@ def resume_model(
         "ats_feedback": ats_feedback,
         "recruiter_feedback": recruiter_feedback,
         "suggestions": suggestions,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(UTC)
     }
