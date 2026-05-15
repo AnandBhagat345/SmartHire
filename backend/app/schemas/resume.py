@@ -72,3 +72,15 @@ class RewriteRequest(BaseModel):
 # Rewrite for output
 class RewriteResponse(BaseModel):
     rewritten_text: str
+    
+
+# Input for Interview Questions
+class InterviewRequest(BaseModel):
+    resume_text: str
+    job_description: str
+
+# Output for Interview Questions
+class InterviewResponse(BaseModel):
+    technical: List[str]
+    hr: List[str]
+    resume_based: List[str]

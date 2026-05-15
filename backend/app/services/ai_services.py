@@ -222,36 +222,32 @@ def rewrite_resume(resume_text: str, job_description: str) -> str:
     model = genai.GenerativeModel("gemini-2.5-flash")
     
     prompt = f"""
-You are an elite resume coach and professional technical writer with 15+ years of experience 
-helping candidates land jobs at top tech companies like Google, Amazon, and Microsoft.
+You are an elite resume rewriting assistant used by top tech recruiters.
 
-Your task is to POLISH and PROFESSIONALLY REWRITE the resume below.
+TASK:
+Rewrite the resume professionally for ATS optimization.
 
-STRICT RULES - YOU MUST FOLLOW:
-1. DO NOT add any new skills, technologies, or tools not already in the resume
-2. DO NOT fabricate achievements, numbers, or experiences
-3. DO NOT change job titles, company names, or dates
-4. ONLY improve: wording, grammar, sentence structure, action verbs, and clarity
-5. Make every bullet point start with a strong action verb
-6. Make achievements sound more impactful WITHOUT adding false information
-7. Keep it ATS-friendly with clean formatting
+RULES:
+- Improve grammar and professionalism
+- Add ATS-friendly wording
+- Add strong action verbs
+- Add modern technical terminology
+- Improve project descriptions
+- Keep facts truthful
+- Do NOT invent fake experience
+- Optimize according to job description
+- Inject relevant JD keywords naturally
+- Make bullets concise and impactful
+- Use recruiter-style language
+- Improve formatting readability
 
-IMPROVE IN THIS ORDER:
-- Weak verbs → Strong action verbs (made → developed, worked on → implemented)
-- Vague statements → Specific and impactful ones
-- Passive voice → Active voice
-- Grammar and spelling errors → Fixed
-- Unprofessional wording → Professional tone
-
-Job Description (for context only — do NOT add skills from here):
-{job_description}
-
-Original Resume:
+Resume:
 {resume_text}
 
+Job Description:
+{job_description}
+
 Return ONLY the rewritten resume text.
-No explanations, no comments, no markdown formatting.
-Just the clean, improved resume content.
 """
 
     try:
