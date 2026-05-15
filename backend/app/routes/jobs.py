@@ -4,6 +4,7 @@ from app.database import jobs_collection
 from app.models.job import job_model
 from app.schemas.job import JobCreate, JobUpdate
 from bson import ObjectId
+from app.utils.rate_limit import rate_limit_exempt
 
 router = APIRouter(prefix="/jobs", tags=["Job Tracker"])
 
@@ -51,7 +52,10 @@ async def get_jobs(current_user = Depends(get_current_user)):
 async def update_job(job_id: str, data: JobUpdate, current_user = Depends(get_current_user)):
     
     # only given fields  update (None wale skip)
-    update_data = {k: v for k, v in data.dict().items() if v is not None}
+    update_data = {
+    k: v for k, v in data.model_dump().items()
+    if v is not None
+    }
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")

@@ -1,4 +1,5 @@
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 import os
 import json
 from dotenv import load_dotenv
@@ -199,7 +200,19 @@ ABSOLUTE RULES:
 - Score MUST reflect real-world rejection logic
 - Suggestions MUST match candidate's actual level
 """
-    response = model.generate_content(prompt)
+    try :
+        response = model.generate_content(prompt)
+    except ResourceExhausted:
+
+        return {
+            "error": "AI service temporarily unavailable. Please try again later."
+        }
+
+    except Exception as e:
+
+        return {
+            "error": str(e)
+        }
     
     start = response.text.find("{")
     end = response.text.rfind("}") + 1
