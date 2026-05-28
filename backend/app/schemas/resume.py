@@ -1,11 +1,20 @@
 from pydantic import BaseModel, field_validator, model_validator
-from typing import List, Literal
+from typing import List, Literal, Dict
+
+
+class SectionScores(BaseModel):
+    keyword_match: int
+    project_quality: int
+    formatting: int
+    ats_readability: int
 
 class AnalysisResponse(BaseModel):
     candidate_level: Literal["FRESHER", "JUNIOR", "MID-LEVEL", "SENIOR"]
     jd_required_level: Literal["FRESHER", "JUNIOR", "MID-LEVEL", "SENIOR"]
     level_mismatch: str
     ats_score: int
+    section_scores: SectionScores   
+    strengths: List[str]
     missing_keywords: List[str]
     quality_issues: List[str]
     ats_feedback: str

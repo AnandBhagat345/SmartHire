@@ -211,6 +211,77 @@ const handleInterviewPrep = async () => {
     {/* Score Card */}
     <ScoreCard score={result.ats_score} />
 
+    <div className="flex gap-3 flex-wrap">
+      <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
+        👤 {result.candidate_level}
+      </span>
+      <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">
+        📋 JD Level: {result.jd_required_level}
+      </span>
+      {result.level_mismatch !== "none" && (
+        <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">
+          ⚠️ {result.level_mismatch}
+        </span>
+      )}
+    </div>
+
+    {/* Section Scores */}
+{result.section_scores && (
+  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+    <p className="text-sm font-semibold text-slate-700 mb-3">
+      📊 Score Breakdown
+    </p>
+    <div className="space-y-2">
+      {Object.entries(result.section_scores).map(([key, val]) => (
+        <div key={key}>
+          <div className="flex justify-between text-xs text-slate-600 mb-1">
+            <span className="capitalize">{key.replace('_', ' ')}</span>
+            <span className="font-bold">{val}</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2">
+            <div
+              className="h-2 rounded-full bg-blue-500 transition-all duration-700"
+              style={{ width: `${val}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{/* Strengths */}
+{result.strengths && result.strengths.length > 0 && (
+  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+    <p className="text-sm font-semibold text-green-700 mb-2">
+      💪 Resume Strengths
+    </p>
+    <ul className="space-y-1">
+      {result.strengths.map((s, i) => (
+        <li key={i} className="text-sm text-green-700 flex gap-2">
+          <span>✅</span> {s}
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
+    {/* Quality Issues */}
+    {result.quality_issues && result.quality_issues.length > 0 && (
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <p className="text-sm font-semibold text-orange-700 mb-2">
+          🔍 Quality Issues ({result.quality_issues.length})
+        </p>
+        <ul className="space-y-1">
+          {result.quality_issues.map((issue, i) => (
+            <li key={i} className="text-sm text-orange-600 flex gap-2">
+              <span>⚠️</span> {issue}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
     {/* Missing Keywords */}
     <SkillTags keywords={result.missing_keywords} />
 

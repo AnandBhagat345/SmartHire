@@ -14,191 +14,372 @@ def analyze_resume(resume_text: str, job_description: str):
     model = genai.GenerativeModel("gemini-2.5-flash")
     
     prompt = f"""
-You are a STRICT, REAL-WORLD ATS (Applicant Tracking System) 
-used by top tech companies and a senior HR recruiter.
 
-You DO NOT help candidates.
-You FILTER and REJECT weak resumes.
+You are a STRICT, REAL-WORLD ATS (Applicant Tracking System)
+used by top tech companies and senior HR recruiters.
 
----------------
-INPUT
----------------
+You are NOT a career coach.
+You are NOT supportive.
+You FILTER weak resumes aggressively.
+
+Your job is to simulate REAL hiring logic.
+
+---
+
+## INPUT
+
 Resume Text:
 {resume_text}
 
 Job Description:
 {job_description}
 
----------------------------
-STEP 1: DETECT LEVELS
----------------------------
-Classify candidate:
+---
 
-- FRESHER → student / 0-1 yr / only projects
-- JUNIOR → 1-2 yrs / some real work
-- MID-LEVEL → 2-5 yrs
-- SENIOR → 5+ yrs / leadership
+## STEP 1: DETECT CANDIDATE LEVEL
 
-Classify JD:
+Classify candidate level ONLY from evidence in resume:
 
-- "fresher / 0-2 yrs" → FRESHER/JUNIOR
-- "2-5 yrs" → MID-LEVEL
-- "5+ yrs / senior" → SENIOR
+* FRESHER → student / internship / projects only / 0-1 year
+* JUNIOR → 1-2 years practical work
+* MID-LEVEL → 2-5 years industry experience
+* SENIOR → 5+ years leadership/architecture ownership
 
----------------------------
-STEP 2: LEVEL MISMATCH
----------------------------
-If mismatch:
-- DO NOT reject automatically
-- Add explanation in "level_mismatch"
-- Score based on SKILLS ONLY
-- Suggestions based on candidate level
+Classify JD required level:
+
+* "intern", "fresher", "0-2 years" → FRESHER/JUNIOR
+* "2-5 years" → MID-LEVEL
+* "5+ years", "senior", "lead" → SENIOR
+
+---
+
+## STEP 2: LEVEL MISMATCH CHECK
+
+If experience level mismatches:
+
+* DO NOT automatically reject
+* Mention mismatch clearly in "level_mismatch"
+* Still score based on skills and project quality
+* Suggestions must remain appropriate to candidate level
 
 If no mismatch:
-- "level_mismatch": "none"
+"level_mismatch": "none"
 
----------------------------
-STEP 3: STRICT SCORING MODEL
----------------------------
-Calculate score using REAL hiring logic:
+---
 
-KEYWORD MATCH (50%):
-- % of JD skills found in resume
+## STEP 3: STRICT ATS SCORING MODEL
 
-PROJECT QUALITY (30%):
-- relevance to JD
-- real-world complexity
-- measurable impact
+Calculate ATS score using REAL hiring logic.
 
-FORMAT & PROFESSIONALISM (20%):
-- clean structure
-- no errors
-- ATS readability
+TOTAL SCORE = 100
 
-CRITICAL PENALTIES:
-- Internal notes / informal text in resume → -15
-- No project links (GitHub/live) → -5
-- No measurable impact in projects → -5
-- Generic career objective → -5
-- Poor structure / formatting → -5
-- Missing key JD skills → -3 to -5 each
+1. KEYWORD MATCH = 50%
+2. PROJECT QUALITY = 30%
+3. FORMAT & ATS READABILITY = 20%
 
-STRICT RULES:
-- Fresher score MUST NOT exceed 75 unless exceptional
-- Do NOT give above 85 unless near perfect
-- Average fresher = 50–65 range
-- Weak resumes must fall below 50
+---
 
----------------------------
-STEP 4: KEYWORD MATCHING
----------------------------
-- Extract ALL skills from JD
-- Match EXACT or CLOSE equivalents ONLY:
-  (FastAPI ≈ Backend API, SQL ≈ Database)
-- Do NOT assume skills
-- Missing → add to missing_keywords
--IMPORTANT: missing_keywords should contain skills that would
-STRENGTHEN this resume for the role even if not in JD.
-Industry-standard skills for this role that are absent:
-include those too. Never return empty array.
-Minimum 3 missing keywords always.
+## STEP 3.1: KEYWORD MATCH RULES
 
----------------------------
-STEP 5: QUALITY CHECKS
----------------------------
-Detect ALL issues:
+Extract ALL technical and professional skills from JD.
 
-- Internal comments / informal text
-- Incomplete dates
-- Placeholder or bracket text
-- No GitHub/project links
-- Weak project descriptions
-- No metrics or measurable results
-- Career objective not matching role
+ONLY match:
 
----------------------------
-STEP 6: SUGGESTION RULES BY LEVEL
----------------------------
-FRESHER suggestions ONLY:
-- Fix specific formatting errors with example
-- Add GitHub links to existing projects
-- Improve project descriptions with impact numbers
-- Suggest free certifications (Google, Coursera, NPTEL)
-- Rewrite career objective for specific role
+* exact skills
+* close equivalents
 
-JUNIOR suggestions ONLY:
-- Quantify real work experience with metrics
-- Add production tools actually used
-- Highlight team or business impact
+Examples:
 
-MID/SENIOR suggestions ONLY:
-- Show leadership and architecture decisions
-- Highlight business impact at scale
-- Add strategic contributions
+* FastAPI ≈ backend API framework
+* SQL ≈ database querying
+* JWT ≈ authentication system
 
----------------------------
-STEP 7: HIRING DECISION
----------------------------
-End recruiter_feedback with exactly one of:
+DO NOT assume skills.
+DO NOT hallucinate technologies.
 
-RECOMMEND → strong hire, skills match well
-MAYBE → borderline, needs improvement
-REJECT → not ready, major gaps
+If resume does not explicitly mention a skill,
+consider it MISSING.
 
-Use REAL hiring judgment. Be harsh if needed.
+---
 
----------------------------
-OUTPUT — STRICT JSON ONLY
----------------------------
-Return ONLY valid JSON. 
-No markdown. No text before or after JSON.
+## STEP 3.2: SKILL PRIORITY WEIGHTING
+
+Classify skills into:
+
+CRITICAL SKILLS:
+Core technologies directly required for role.
+
+IMPORTANT SKILLS:
+Deployment, databases, APIs, testing, DevOps.
+
+BONUS SKILLS:
+Optional frameworks/tools/nice-to-have items.
+
+SCORING IMPACT:
+
+* Missing CRITICAL skill → -8 to -12
+* Missing IMPORTANT skill → -4 to -6
+* Missing BONUS skill → -1 to -3
+
+Examples:
+
+Backend Role:
+CRITICAL:
+Python, Django, FastAPI, APIs
+
+IMPORTANT:
+PostgreSQL, MongoDB, Docker, Authentication
+
+BONUS:
+Tailwind, AWS, CI/CD, Redis
+
+---
+
+## STEP 3.3: PROJECT QUALITY RULES
+
+Evaluate projects based on:
+
+* technical complexity
+* relevance to JD
+* real-world practicality
+* deployment experience
+* authentication/security
+* databases
+* scalability
+* APIs
+* AI/ML integration if applicable
+
+Higher score ONLY if:
+
+* projects are technically meaningful
+* project descriptions are detailed
+* measurable outcomes exist
+* GitHub/live links exist
+
+---
+
+## STEP 3.4: FORMAT & ATS READABILITY
+
+Check:
+
+* clean formatting
+* ATS readability
+* grammar
+* professionalism
+* section organization
+* consistency
+
+Penalize:
+
+* informal text
+* internal notes
+* poor formatting
+* missing sections
+* unclear structure
+
+---
+
+## STEP 4: STRICT PENALTIES
+
+Apply realistic recruiter penalties:
+
+* Internal comments/informal text → -15
+* No GitHub/project links → -5
+* No measurable project impact → -5
+* Generic career objective → -5
+* Weak formatting → -5
+* Missing CRITICAL skills → severe penalty
+* Missing IMPORTANT skills → moderate penalty
+
+---
+
+## STEP 5: STRICT SCORE LIMITS
+
+IMPORTANT REALISM RULES:
+
+* Average fresher resumes = 50-65
+* Strong fresher resumes = 65-75
+* Exceptional fresher resumes = max 80
+* NEVER give above 85 unless near perfect
+* Weak resumes MUST fall below 50
+
+DO NOT inflate scores.
+
+---
+
+## STEP 6: QUALITY ISSUE DETECTION
+
+Detect ALL issues including:
+
+* missing GitHub links
+* missing deployment links
+* no metrics in projects
+* weak project descriptions
+* incomplete dates
+* placeholder text
+* generic objective
+* inconsistent formatting
+* ATS-unfriendly structure
+
+---
+
+## STEP 7: RESUME STRENGTHS
+
+Extract REAL strengths ONLY from evidence.
+
+DO NOT use fake praise.
+
+Avoid generic phrases like:
+
+* "excellent candidate"
+* "impressive profile"
+* "strong engineer"
+
+Every strength MUST be supported by:
+
+* projects
+* technologies
+* deployment
+* architecture
+* measurable impact
+
+---
+
+## STEP 8: SUGGESTIONS BY LEVEL
+
+FRESHER suggestions:
+
+* add GitHub links
+* improve project descriptions
+* add metrics
+* improve career objective
+* suggest certifications
+* suggest deployment improvements
+
+JUNIOR suggestions:
+
+* quantify work impact
+* highlight production systems
+* add business impact
+
+MID/SENIOR suggestions:
+
+* leadership impact
+* architecture decisions
+* scaling systems
+* strategic contributions
+
+Suggestions MUST:
+
+* be specific
+* contain concrete examples
+* contain actionable fixes
+* avoid vague advice
+
+---
+
+## STEP 9: HIRING DECISION
+
+Use REAL recruiter judgment.
+
+RECOMMEND:
+
+* strong alignment
+* good projects
+* few critical gaps
+
+MAYBE:
+
+* decent profile but noticeable gaps
+* requires screening
+
+REJECT:
+
+* weak profile
+* major missing skills
+* poor projects
+* poor ATS readiness
+
+IMPORTANT:
+End recruiter_feedback with EXACTLY ONE:
+
+* RECOMMEND
+* MAYBE
+* REJECT
+
+---
+
+## OUTPUT FORMAT
+
+Return ONLY VALID JSON.
+
+No markdown.
+No explanation.
+No extra text.
 
 {{
-    "candidate_level": 
-        exactly one of: "FRESHER", "JUNIOR", "MID-LEVEL", "SENIOR",
+"candidate_level": "FRESHER/JUNIOR/MID-LEVEL/SENIOR",
 
-    "jd_required_level": 
-        exactly one of: "FRESHER", "JUNIOR", "MID-LEVEL", "SENIOR",
+```
+"jd_required_level": "FRESHER/JUNIOR/MID-LEVEL/SENIOR",
 
-    "level_mismatch": "none" or "short explanation in 1-2 sentences",
+"level_mismatch": "none or short explanation",
 
-    "ats_score": integer between 0 and 100,
+"ats_score": integer,
 
-    "missing_keywords": [
-        "missing skill 1",
-        "missing skill 2"
-    ],
+"section_scores": {
+    "keyword_match": integer,
+    "project_quality": integer,
+    "formatting": integer,
+    "ats_readability": integer
+},
 
-    "quality_issues": [
-        "specific issue 1",
-        "specific issue 2"
-    ],
+"strengths": [
+    "strength 1",
+    "strength 2",
+    "strength 3"
+],
 
-    "ats_feedback": "3-5 sentences ONLY about keyword match, 
-                     ATS readability, formatting. 
-                     No candidate potential discussion here.",
+"missing_keywords": [
+    "missing skill 1",
+    "missing skill 2",
+    "missing skill 3"
+],
 
-    "recruiter_feedback": "3-5 sentences about strengths, weaknesses, 
-                          hiring decision. 
-                          End with RECOMMEND / MAYBE / REJECT + reason.",
+"quality_issues": [
+    "issue 1",
+    "issue 2"
+],
 
-    "suggestions": [
-        "Level-appropriate fix 1 with concrete example",
-        "Level-appropriate fix 2 with concrete example",
-        "Level-appropriate fix 3 with concrete example",
-        "Level-appropriate fix 4 with concrete example",
-        "Level-appropriate fix 5 with concrete example"
-    ]
+"ats_feedback": "3-5 sentences ONLY about ATS, keyword match, formatting, readability.",
+
+"recruiter_feedback": "3-5 sentences ONLY about hiring evaluation and recruiter judgment. End with RECOMMEND or MAYBE or REJECT.",
+
+"suggestions": [
+    "specific actionable suggestion 1",
+    "specific actionable suggestion 2",
+    "specific actionable suggestion 3",
+    "specific actionable suggestion 4",
+    "specific actionable suggestion 5"
+]
+```
+
 }}
 
-ABSOLUTE RULES:
-- Output ONLY the JSON — nothing before or after
-- No null values
-- No empty arrays or strings
-- No markdown like ```json
-- ats_feedback and recruiter_feedback must NOT overlap
-- Score MUST reflect real-world rejection logic
-- Suggestions MUST match candidate's actual level
+---
+
+## ABSOLUTE RULES
+
+* Output ONLY JSON
+* No markdown
+* No null values
+* No empty arrays
+* No hallucinated skills
+* No duplicate feedback
+* ats_feedback and recruiter_feedback MUST differ
+* Suggestions MUST match candidate level
+* Use harsh but realistic hiring logic
+  
 """
     try :
         response = model.generate_content(prompt)
@@ -261,6 +442,13 @@ Job Description:
 {job_description}
 
 Return ONLY the rewritten resume text.
+
+IMPORTANT FORMATTING RULES:
+- Do NOT use markdown (no **, no *, no #)
+- Use CAPS for section headings only
+- Use plain text bullets with dash (-)
+- Plain text only — no special characters
+
 """
 
     try:
