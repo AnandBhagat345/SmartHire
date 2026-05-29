@@ -320,19 +320,19 @@ No extra text.
 {{
 "candidate_level": "FRESHER/JUNIOR/MID-LEVEL/SENIOR",
 
-```
+
 "jd_required_level": "FRESHER/JUNIOR/MID-LEVEL/SENIOR",
 
 "level_mismatch": "none or short explanation",
 
 "ats_score": integer,
 
-"section_scores": {
+"section_scores": {{
     "keyword_match": integer,
     "project_quality": integer,
     "formatting": integer,
     "ats_readability": integer
-},
+}},
 
 "strengths": [
     "strength 1",
@@ -471,7 +471,7 @@ that would actually be asked in a real interview for this position.
 
 ---------------------------
 INPUT
----------------------------
+---------------
 Resume:
 {resume_text}
 
