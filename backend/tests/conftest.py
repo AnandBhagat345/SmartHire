@@ -2,6 +2,7 @@ import pytest
 import asyncio
 import os
 from httpx import AsyncClient, ASGITransport
+import pytest_asyncio
 
 # Testing mode on karo
 os.environ["TESTING"] = "true"
@@ -14,7 +15,8 @@ def event_loop():
     yield loop
     loop.close()
 
-@pytest.fixture(scope="session")
+
+@pytest_asyncio.fixture(scope="session")
 async def client():
     async with AsyncClient(
         transport=ASGITransport(app=app),
