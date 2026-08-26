@@ -6,7 +6,7 @@ from app.services.auth_services import verify_token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    # verify the karo
+    # verify the it
     payload = verify_token(token)
     
    
