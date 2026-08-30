@@ -1,7 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException,Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import Depends
-import os
 
 from app.schemas.auth import RegisterRequest, TokenResponse
 from app.services.auth_services import (
@@ -12,33 +11,36 @@ from app.services.auth_services import (
 
 from app.models.user import user_model
 from app.database import users_collection
-
-from fastapi import APIRouter, HTTPException, status, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
-from app.utils.rate_limit import rate_limit_exempt
+from app.services.rate_limiter import RateLimiter
 
 
-limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
 
-
-# limiter bypass during Testing
-def rate_limit_exempt():
-    return os.getenv("TESTING") == "true"
-
+rate_limiter = RateLimiter()
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-@limiter.limit(
-    "5/minute",
-    exempt_when=rate_limit_exempt
-)
 async def register(request: Request, data: RegisterRequest):
+    
+    # Redis Sliding Window Rate Limiting (IP-based)
+    client_ip = request.client.host
+
+    cache_key = f"rate_limit:register:ip:{client_ip}"
+
+    allowed, request_count = await rate_limiter.is_allowed(
+        key=cache_key,
+        limit=5,
+        window=60
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many registration attempts. Please try again later."
+        )
 
     existing_user = await users_collection.find_one(
         {"email": data.email}
@@ -67,14 +69,40 @@ async def register(request: Request, data: RegisterRequest):
 
 # ---- Login ---
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit(
-    "10/minute",
-    exempt_when=rate_limit_exempt
-)
 async def login(
     request: Request,
     data: OAuth2PasswordRequestForm = Depends()
 ):
+    client_ip = request.client.host
+
+    ip_cache_key = f"rate_limit:login:ip:{client_ip}"
+
+    allowed, request_count = await rate_limiter.is_allowed(
+        key=ip_cache_key,
+        limit=10,
+        window=60
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many login attempts from this IP. Please try again later."
+        )
+        
+    
+    email_cache_key = f"rate_limit:login:email:{data.username}"
+
+    allowed, request_count = await rate_limiter.is_allowed(
+        key=email_cache_key,
+        limit=5,
+        window=60
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many login attempts for this account. Please try again later."
+        )
 
     # OAuth2 username field = email
     user = await users_collection.find_one(

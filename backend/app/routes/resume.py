@@ -10,39 +10,18 @@ from app.models.resume import resume_model
 
 from app.schemas.resume import AnalysisResponse, RewriteRequest, RewriteResponse,  InterviewRequest, InterviewResponse
 from app.services.ai_services import analyze_resume, rewrite_resume, generate_interview_questions
-
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-import os
-from app.utils.rate_limit import rate_limit_exempt
 
-limiter = None
-
-if os.getenv("TESTING") != "1":
-    limiter = Limiter(
-        key_func=get_remote_address
-    )
-
-
-def rate_limit(limit_value: str):
-
-    def decorator(func):
-
-        if limiter:
-            return limiter.limit(limit_value)(func)
-
-        return func
-
-    return decorator
+from app.services.rate_limiter import RateLimiter
 
 
 # Router
-
 router = APIRouter(
     prefix="/resume",
     tags=["Resume"]
 )
+
+rate_limiter = RateLimiter()
 
 # Analyze Resume
 
@@ -50,13 +29,26 @@ router = APIRouter(
     "/analyze",
     response_model=AnalysisResponse
 )
-@rate_limit("5/minute")
 async def analyze(
     request: Request,
     file: UploadFile = File(...),
     job_description: str = Form(...),
     current_user=Depends(get_current_user)
 ):
+    # Redis Sliding Window Rate Limiting
+    cache_key = f"rate_limit:analyze:user:{current_user['user_id']}"
+
+    allowed, request_count = await rate_limiter.is_allowed(
+        key=cache_key,
+        limit=5,
+        window=60
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many resume analysis requests. Please try again later."
+        )
 
     # Extract text from PDF
     resume_text = extract_text_from_pdf(file)
@@ -129,12 +121,25 @@ async def get_history(
     "/rewrite",
     response_model=RewriteResponse
 )
-@rate_limit("5/minute")
 async def rewrite(
     request: Request,
     data: RewriteRequest,
     current_user=Depends(get_current_user)
 ):
+    # Redis Sliding Window Rate Limiting
+    cache_key = f"rate_limit:rewrite:user:{current_user['user_id']}"
+
+    allowed, request_count = await rate_limiter.is_allowed(
+        key=cache_key,
+        limit=5,
+        window=60
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many resume rewrite requests. Please try again later."
+        )
 
     resume_text = data.resume_text
     job_description = data.job_description
@@ -166,12 +171,25 @@ async def rewrite(
     "/interview-prep",
     response_model=InterviewResponse
 )
-@rate_limit("5/minute")
 async def interview_prep(
     request: Request,
     data: InterviewRequest,
     current_user=Depends(get_current_user)
 ):
+        # Redis Sliding Window Rate Limiting
+    cache_key = f"rate_limit:interview:user:{current_user['user_id']}"
+
+    allowed, request_count = await rate_limiter.is_allowed(
+        key=cache_key,
+        limit=5,
+        window=60
+    )
+
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many interview preparation requests. Please try again later."
+        )
 
     resume_text = data.resume_text
     job_description = data.job_description
