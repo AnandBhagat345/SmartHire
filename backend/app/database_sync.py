@@ -1,0 +1,13 @@
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+MONGODB_URL = os.getenv("MONGODB_URL")
+
+client = MongoClient(MONGODB_URL)
+
+db = client.smarthire
+
+resumes_collection_sync = db["resumes"]

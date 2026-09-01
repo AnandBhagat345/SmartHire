@@ -1,18 +1,23 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends
-from app.middleware.auth_middleware import get_current_user
-from app.services.pdf_services import extract_text_from_pdf
-from app.services.ai_services import analyze_resume
-from app.schemas.resume import AnalysisResponse
-
-
-from app.database import resumes_collection
-from app.models.resume import resume_model
-
-from app.schemas.resume import AnalysisResponse, RewriteRequest, RewriteResponse,  InterviewRequest, InterviewResponse
-from app.services.ai_services import analyze_resume, rewrite_resume, generate_interview_questions
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, Request
 
+from app.middleware.auth_middleware import get_current_user
+from app.services.pdf_services import extract_text_from_pdf
+
+from app.schemas.resume import (
+    RewriteRequest,
+    RewriteResponse,
+    InterviewRequest,
+    InterviewResponse
+)
+
+from app.services.ai_services import (
+    rewrite_resume,
+    generate_interview_questions
+)
+
+from app.database import resumes_collection
 from app.services.rate_limiter import RateLimiter
+from app.tasks.resume_tasks import analyze_resume_task
 
 
 # Router
@@ -25,10 +30,7 @@ rate_limiter = RateLimiter()
 
 # Analyze Resume
 
-@router.post(
-    "/analyze",
-    response_model=AnalysisResponse
-)
+@router.post("/analyze")
 async def analyze(
     request: Request,
     file: UploadFile = File(...),
@@ -59,42 +61,20 @@ async def analyze(
             detail="PDF empty or unreadable"
         )
 
-    # AI Analysis
-    result = analyze_resume(
+    # Send AI analysis task to Celery Worker
+    task = analyze_resume_task.delay(
         resume_text,
-        job_description
+        job_description,
+        current_user["user_id"]
     )
 
-    # AI Error
-    if "error" in result:
-        raise HTTPException(
-            status_code=500,
-            detail=result["error"]
-        )
-
-    # Save to MongoDB
-    document = resume_model(
-        user_id=current_user["user_id"],
-        job_description=job_description,
-        ats_score=result["ats_score"],
-        missing_keywords=result["missing_keywords"],
-        ats_feedback=result["ats_feedback"],
-        recruiter_feedback=result["recruiter_feedback"],
-        suggestions=result["suggestions"]
-    )
-
-    await resumes_collection.insert_one(document)
-
-    # Return response
+    # Return immediately
     return {
-        **result,
-        "resume_text": resume_text
+        "message": "Resume analysis started",
+        "task_id": task.id
     }
 
-
-
 # Resume History
-
 
 @router.get("/history")
 async def get_history(

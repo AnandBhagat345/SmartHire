@@ -1,10 +1,18 @@
 from celery import Celery
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
+
+REDIS_URL = os.getenv("REDIS_URL")
 
 celery_app = Celery(
     "smarthire",
-    broker="redis://localhost:6379/1",
-    backend="redis://localhost:6379/1"
+    broker=f"{REDIS_URL}/1",
+    backend=f"{REDIS_URL}/1",
+    include=[
+        "app.tasks.resume_tasks"
+    ]
 )
 
 celery_app.conf.update(

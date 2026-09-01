@@ -1,20 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { analyzeResume, getHistory } from '../api/resume'
 import { getJobs } from '../api/jobs'
 import Navbar from '../components/Navbar'
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import ScoreCard from '../components/ScoreCard'
 import SkillTags from '../components/SkillTags'
-import { rewriteResume,  generateInterviewQuestions } from '../api/resume'
+import {
+  analyzeResume,
+  getHistory,
+  getAnalysisTaskStatus,
+  rewriteResume,
+  generateInterviewQuestions
+} from '../api/resume'
 
 export default function Dashboard() {
   const [file, setFile] = useState(null)
   const [jobDescription, setJobDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
+  const [analysisStatus, setAnalysisStatus] = useState('')
   const [history, setHistory] = useState([])
   const [jobs, setJobs] = useState([])
   const [error, setError] = useState('')
@@ -27,7 +33,7 @@ export default function Dashboard() {
   const [resumeText, setResumeText] = useState('')
 
   const [questions, setQuestions] = useState(null)
-const [loadingQuestions, setLoadingQuestions] = useState(false)
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
 
   // Page load pe data fetch karo
   useEffect(() => {
@@ -53,23 +59,114 @@ const [loadingQuestions, setLoadingQuestions] = useState(false)
     }
   }
 
-  const handleAnalyze = async (e) => {
-    e.preventDefault()
-    if (!file) return setError('Upload the PDF!')
-    
-    setLoading(true)
-    setError('')
-    
-    try {
-      const data = await analyzeResume(file, jobDescription, token)
-      setResult(data)
-      fetchHistory() // Refresh history 
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong!')
-    } finally {
-      setLoading(false)
-    }
+ const handleAnalyze = async (e) => {
+  e.preventDefault()
+
+  if (!file) {
+    return setError('Upload the PDF!')
   }
+
+  setLoading(true)
+  setError('')
+  setResult(null)
+  setAnalysisStatus('Preparing your resume analysis...')
+
+  try {
+    // Start background analysis
+    const taskData = await analyzeResume(
+      file,
+      jobDescription,
+      token
+    )
+
+    const taskId = taskData.task_id
+    let statusInterval = null
+    let messageIndex = 0
+
+    const startedMessages = [
+      '🤖 AI is analyzing your resume...',
+      '🔍 Checking skills and keywords...',
+      '📊 Calculating your ATS score...',
+      '💡 Generating personalized feedback...',
+      '🚀 Almost there, finalizing your analysis...'
+    ]
+
+    // Check task status every 2 seconds
+    const pollTaskStatus = setInterval(async () => {
+      try {
+        const statusData = await getAnalysisTaskStatus(
+          taskId,
+          token
+        )
+
+        if (statusData.status === 'PENDING') {
+          setAnalysisStatus('⏳ Preparing your resume analysis...')
+        }
+
+        if (statusData.status === 'STARTED' && !statusInterval) {
+          setAnalysisStatus(startedMessages[messageIndex])
+
+          statusInterval = setInterval(() => {
+            messageIndex = (messageIndex + 1) % startedMessages.length
+
+            setAnalysisStatus(startedMessages[messageIndex])
+          }, 3000)
+        }
+
+        if (statusData.status === 'SUCCESS') {
+          clearInterval(pollTaskStatus)
+
+          if (statusInterval) {
+            clearInterval(statusInterval)
+          }
+
+          setAnalysisStatus('')
+          setResult(statusData.result)
+          fetchHistory()
+          setLoading(false)
+        }
+
+        if (statusData.status === 'FAILURE') {
+          clearInterval(pollTaskStatus)
+
+          if (statusInterval) {
+            clearInterval(statusInterval)
+          }
+
+          setAnalysisStatus('')
+          setError('Resume analysis failed. Please try again.')
+          setLoading(false)
+        }
+
+      } catch (err) {
+        clearInterval(pollTaskStatus)
+
+        if (statusInterval) {
+          clearInterval(statusInterval)
+        }
+
+        setAnalysisStatus('')
+
+        setError(
+          err.response?.data?.detail ||
+          'Failed to check analysis status.'
+        )
+
+        setLoading(false)
+      }
+    }, 2000)
+
+  } catch (err) {
+    setAnalysisStatus('')
+
+    setError(
+      err.response?.data?.detail ||
+      'Something went wrong!'
+    )
+
+    setLoading(false)
+  }
+}
 
   const handleLogout = () => {
     logout()
@@ -197,6 +294,12 @@ const handleInterviewPrep = async () => {
           >
             {loading ? 'Analyzing... ⏳' : '🔍 Analyze Resume'}
           </button>
+
+          {loading && analysisStatus && (
+            <p className="text-center mt-3 text-gray-600">
+              {analysisStatus}
+            </p>
+          )}
 
         </form>
       </div>

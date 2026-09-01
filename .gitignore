@@ -1,12 +1,12 @@
 venv/
+
+# Environment variables & secrets
 .env
+.env.docker
+
 __pycache__/
 *.pyc
 uploads/
 .vscode/
-node_modules
+node_modules/
 dist/
-
-
-
-

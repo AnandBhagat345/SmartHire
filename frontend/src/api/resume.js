@@ -16,6 +16,20 @@ export const analyzeResume = async (file, jobDescription, token) => {
     return response.data
 }
 
+// Get Resume Analysis Task Status
+export const getAnalysisTaskStatus = async (taskId, token) => {
+    const response = await axios.get(
+        `${API}/task-status/${taskId}`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    )
+
+    return response.data
+}
+
 // Get History
 export const getHistory = async (token) => {
     const response = await axios.get(
