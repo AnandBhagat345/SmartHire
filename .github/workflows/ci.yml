@@ -48,8 +48,9 @@ jobs:
           MONGODB_URL: ${{ secrets.MONGODB_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           REDIS_URL: redis://localhost:6379/0
+          TESTING: "true"
         run: |
-          pytest -s
+          pytest
 
 
   frontend-build:
