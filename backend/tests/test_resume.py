@@ -75,16 +75,16 @@ async def test_analyze_resume(client):
         }
     )
 
-    # status check
-    assert response.status_code in [200, 500]
+    # Background task should be accepted
+    assert response.status_code == 200
 
-    # AI success case
-    if response.status_code == 200:
-        data = response.json()
+    data = response.json()
 
-        assert "ats_score" in data
-        assert "missing_keywords" in data
-        assert "suggestions" in data
+    assert "message" in data
+    assert "task_id" in data
+
+    assert data["message"] == "Resume analysis started"
+    assert isinstance(data["task_id"], str)
 
 
 
