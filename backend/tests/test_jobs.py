@@ -7,17 +7,23 @@ def unique_email():
 # Helper — take token from loging
 async def get_token(client):
     email = unique_email()
-    await client.post("/auth/register", json={
+
+    register_response = await client.post("/auth/register", json={
         "name": "Job Test User",
         "email": email,
         "password": "test123"
     })
+
+    print("REGISTER:", register_response.status_code, register_response.json())
+
     response = await client.post("/auth/login", data={
         "username": email,
         "password": "test123"
     })
-    return response.json()["access_token"]
 
+    print("LOGIN:", response.status_code, response.json())
+
+    return response.json()["access_token"]
 @pytest.mark.asyncio
 async def test_create_job(client):
     token = await get_token(client)

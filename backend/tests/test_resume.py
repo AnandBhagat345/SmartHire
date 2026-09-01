@@ -6,12 +6,11 @@ from reportlab.pdfgen import canvas
 def unique_email():
     return f"resume_{uuid.uuid4().hex[:8]}@gmail.com"
 
-
-#  token generate
+# Token Generate
 async def get_token(client):
     email = unique_email()
 
-    await client.post(
+    register_response = await client.post(
         "/auth/register",
         json={
             "name": "Resume Test User",
@@ -19,6 +18,8 @@ async def get_token(client):
             "password": "test123"
         }
     )
+
+    print("REGISTER:", register_response.status_code, register_response.json())
 
     response = await client.post(
         "/auth/login",
@@ -28,8 +29,9 @@ async def get_token(client):
         }
     )
 
-    return response.json()["access_token"]
+    print("LOGIN:", response.status_code, response.json())
 
+    return response.json()["access_token"]
 
 # Fake PDF file
 def fake_pdf():
